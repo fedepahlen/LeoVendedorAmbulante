@@ -267,13 +267,6 @@ plataSound.volume = 0.7;
 const dingSound = new Audio("Ding.mp3"); // Sonido para colisión con elementos flotantes
 dingSound.volume = 0.8;
 
-
-// Música de la pantalla de inicio
-const introMusic = new Audio("MusicaFondo.mp3"); // CAMBIADO A MusicaFondo.mp3
-introMusic.volume = 0.4;
-introMusic.loop = true;
-
-
 // Sonido para la nube
 const pufSound = new Audio("Puf.mp3");
 pufSound.volume = 0.7;
@@ -311,8 +304,8 @@ const POLI_APPEAR_INTERVAL=5000; // Intervalo para que aparezcan policías
 const POLI_LIFESPAN = 8000; // Duración en ms que el policía permanece activo
 const POLI_MIN_DIRECTION_CHANGES = 2; // Mínimo de cambios de dirección
 const POLI_MAX_DIRECTION_CHANGES = 3; // Máximo de cambios de dirección
-const POLI_THROW_INTERVAL = 2000; // Intervalo para que el policía arroje tomates
-const TOMATE_SPEED = 500; // Velocidad del tomate
+const POLI_THROW_INTERVAL = 2500; // Intervalo para que el policía arroje tomates
+const TOMATE_SPEED = 400; // Velocidad del tomate
 const TOMATE_W = 40, TOMATE_H = 40;
 
 
@@ -336,7 +329,7 @@ const PROJECTILE_COLLISION_OFFSET_Y = 5; // Más pequeño para que se tenga que 
 
 
 const ENEMY_W=70, ENEMY_H=90;
-const POLICE_W=60, POLICE_H=80; // Policía un poco más chico
+const POLICE_W=70, POLICE_H=90; // Policía un poco más chico
 
 
 // Límite de enemigos en pantalla
@@ -352,7 +345,7 @@ const CLOUD_MAX_SIZE = 100; // Tamaño máximo de la nube en píxeles
 // Constantes de Nivel
 const LEVEL1_SCORE_THRESHOLD = 150; // Puntos para pasar al Nivel 2
 const LEVEL2_SCORE_THRESHOLD = 250; // Puntos para terminar el juego (actualmente en 250)
-const LEVEL_SPEED_MULTIPLIER = 2; // Multiplicador de velocidad para el Nivel 2
+const LEVEL_SPEED_MULTIPLIER = 1.5; // Multiplicador de velocidad para el Nivel 2
 
 
 /* ═════════════ ESTADO GLOBAL ═════════════ */
