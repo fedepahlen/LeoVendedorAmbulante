@@ -1,0 +1,1127 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1.0"/>
+<title>Vendedor Ambulante</title>
+
+
+<script src="https://cdn.tailwindcss.com"></script>
+<link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&display=swap" rel="stylesheet">
+<style>
+body {
+   font-family: 'Press Start 2P', cursive;
+   image-rendering: pixelated; /* Asegura que las imágenes se vean pixeladas */
+}
+canvas {
+   background: #000;
+   image-rendering: pixelated;
+}
+#start-screen, #level-complete-screen, #game-over-screen, #game-end-screen { /* Añadido #level-complete-screen y #game-end-screen */
+   background-color: rgba(0, 0, 0, 0.9);
+   position: absolute;
+   top: 0;
+   left: 0;
+   width: 100%;
+   height: 100%;
+   display: flex;
+   flex-direction: column;
+   justify-content: center;
+   align-items: center;
+   text-align: center;
+   z-index: 100;
+}
+#start-screen h1, #level-complete-screen h1, #game-over-screen h1, #game-end-screen h1 {
+   font-size: 3rem;
+   color: #fff;
+   margin-bottom: 1.5rem;
+}
+#start-screen p, #level-complete-screen p, #game-over-screen p, #game-end-screen p {
+   font-size: 1.2rem;
+   color: #fff;
+   max-width: 600px;
+   margin-bottom: 2rem;
+   line-height: 1.6;
+}
+.game-button { /* Clase general para botones de juego */
+   background-color: #4CAF50; /* Un verde que evoca el pixel art */
+   color: white;
+   padding: 15px 30px;
+   border: none;
+   border-radius: 5px;
+   font-size: 1.5rem;
+   cursor: pointer;
+   transition: background-color 0.3s ease;
+   box-shadow: 0 5px 0 #2E8B57; /* Sombra para efecto 3D pixelado */
+   margin-top: 20px; /* Espacio superior para separar del texto */
+}
+.game-button:hover {
+   background-color: #3e8e41;
+   box-shadow: 0 3px 0 #2E8B57;
+}
+/* Estilo para ocultar las pantallas */
+.hidden {
+   display: none !important;
+}
+
+
+/* Estilos específicos para la pantalla final (Escuela.png) */
+#school-screen {
+   position: absolute;
+   top: 0;
+   left: 0;
+   width: 100%;
+   height: 100%;
+   background-size: cover;
+   background-position: center;
+   display: flex;
+   flex-direction: column;
+   justify-content: center;
+   align-items: center;
+   text-align: center;
+   z-index: 101; /* Más alto que otras pantallas para superponerse */
+   background-image: url('Escuela.png'); /* Fondo de la escuela */
+}
+
+
+#school-screen .player-on-school-screen {
+   position: absolute;
+   top: 80%; /* Ajusta la posición vertical según necesites */
+   left: 20%;
+   transform: translate(-50%, -50%); /* Centra la imagen */
+   width: 150px; /* Tamaño de Leo en la pantalla final */
+   height: 180px;
+}
+
+
+#school-screen .message-box {
+   background-color: rgba(0, 0, 0, 0.7); /* Fondo semi-transparente para el texto */
+   padding: 25px;
+   border-radius: 10px;
+   max-width: 700px; /* Ancho máximo del cuadro de mensaje */
+   color: #fff;
+   font-size: 1.3rem; /* Tamaño de fuente para el mensaje */
+   line-height: 1.8;
+   position: absolute;
+   bottom: 10%; /* Posición desde la parte inferior */
+   left: 50%;
+   transform: translateX(-50%);
+}
+
+
+#school-screen .message-box span {
+   display: block; /* Para que cada línea del hashtag aparezca en una nueva línea */
+   margin-top: 10px;
+   font-size: 1.5rem;
+   color: #FFD700; /* Color llamativo para el hashtag */
+}
+
+
+</style>
+</head>
+<body class="bg-gray-800 text-white flex flex-col items-center min-h-screen">
+
+
+<div id="start-screen">
+   <h1>VENDEDOR AMBULANTE</h1>
+   <p>Ayuda a Leo a vender su stock de útiles escolares a los Transeúntes del Subte. Utiliza las flechas para desplazarte y saltar, y la barra espaciadora para ofrecer tus productos. Cuanto antes termines, antes podrás asistir a la escuela. Sólo presta atención a una cosa: ¡Cuidado con los policías!</p>
+   <button id="start-button" class="game-button">COMENZAR</button>
+</div>
+
+
+<div id="level-complete-screen" class="hidden">
+   <h1 id="level-complete-title"></h1>
+   <p id="level-complete-message"></p>
+   <button id="next-level-button" class="game-button">Comenzar Nivel 2</button>
+</div>
+
+
+<div id="game-end-screen" class="hidden">
+   <h1>¡Felicitaciones!</h1>
+   <p>Terminaste de trabajar y es hora de ir a la escuela.</p>
+   <button id="go-to-school-button" class="game-button">Ir a la escuela</button>
+</div>
+
+
+<div id="school-screen" class="hidden">
+   <img src="personaje.png" alt="Leo" class="player-on-school-screen">
+   <div class="message-box">
+       Para muchxs chicxs, trabajar no es un juego.<br>
+       Es una obligación que los aleja de la escuela y hace que pierdan o retrasen su escolaridad.<br><br>
+       Ayudanos a visibilizar esta realidad.<span>#NoEsUnJuego</span>
+   </div>
+</div>
+
+
+<div id="game-container" class="hidden flex flex-col items-center w-full">
+   <div id="scoreBoard" class="text-3xl mt-4">PUNTOS: 0 &nbsp;&nbsp; VIDA: ❤️❤️❤️❤️❤️❤️</div>
+   <div class="text-xl mt-2 text-center leading-7">
+    ← →: camina &nbsp;|&nbsp; ↑: salta &nbsp;|&nbsp; ↓: baja plataforma <br>
+    Espacio: dispara &nbsp;|&nbsp; R: reinicio
+   </div>
+
+
+   <canvas id="game" width="800" height="600"
+          class="mt-4 border-4 border-white shadow-2xl"></canvas>
+</div>
+
+
+<script>
+/* ═════════════ CANVAS / HUD ═════════════ */
+const canvas=document.getElementById('game'),ctx=canvas.getContext('2d');ctx.imageSmoothingEnabled=false;
+const HUD=document.getElementById('scoreBoard');
+const startScreen = document.getElementById('start-screen');
+const startButton = document.getElementById('start-button');
+const gameContainer = document.getElementById('game-container');
+const levelCompleteScreen = document.getElementById('level-complete-screen');
+const levelCompleteTitle = document.getElementById('level-complete-title');
+const levelCompleteMessage = document.getElementById('level-complete-message');
+const nextLevelButton = document.getElementById('next-level-button');
+const gameEndScreen = document.getElementById('game-end-screen');
+const goToSchoolButton = document.getElementById('go-to-school-button');
+const schoolScreen = document.getElementById('school-screen');
+
+
+
+
+/* ═════════════ IMÁGENES PRINCIPALES ═════════════ */
+const imgPlayer=new Image(); imgPlayer.src="personaje.png";
+
+
+const imgTranseunte1=new Image(); imgTranseunte1.src="Transeunte1.png";
+const imgTranseunte2=new Image(); imgTranseunte2.src="Transeunte2.png";
+const imgTranseunte3=new Image(); imgTranseunte3.src="Transeunte3.png";
+
+
+const enemyImgs = [imgTranseunte1, imgTranseunte2, imgTranseunte3];
+const enemyReady = enemyImgs.map(() => false);
+enemyImgs.forEach((img, i) => img.onload = () => enemyReady[i] = true);
+
+
+
+
+const imgPolicia=new Image(); imgPolicia.src="Policia.png";
+const bg1=new Image(); bg1.src="San pedrito.png"; // Nivel 1
+const bg2=new Image(); bg2.src="PlazaMiserere.png"; // Nivel 2
+const imgBanco =new Image(); imgBanco.src="Banco1.png";
+const imgNube = new Image(); imgNube.src = "Nube.png"; // Nueva imagen de la nube
+const imgSubterraneo = new Image(); imgSubterraneo.src = "Subterraneo.png"; // Imagen de transición
+
+
+let playerReady=false,policeReady=false,bg1Ready=false,bg2Ready=false,bancoReady=false,nubeReady=false,subterraneoReady=false; // Añadido bg2Ready y subterraneoReady
+imgPlayer.onload=()=>playerReady=true;
+imgPolicia.onload=()=>policeReady=true;
+bg1.onload=()=>{bg1Ready=true;worldW=bg1.width;}
+bg2.onload=()=>{bg2Ready=true;worldW=bg2.width;}
+imgBanco.onload=()=>bancoReady=true;
+imgNube.onload=()=>nubeReady=true;
+imgSubterraneo.onload=()=>subterraneoReady=true;
+
+
+/* ═════════════ PNGs disparo, curas, premio Plata ═════════════ */
+const itemImgs=["Cuaderno.png","Lapices.png","Regla.png","Lapicera.png"].map(s=>{const i=new Image();i.src=s;return i});
+const itemReady=itemImgs.map(()=>false); itemImgs.forEach((im,i)=>im.onload=()=>itemReady[i]=true);
+const ITEM_W=32,ITEM_H=32;
+
+
+const healImgs=["Apple.png","Sandwich.png","Agua.png"].map(s=>{const i=new Image();i.src=s;return i});
+const healReady=healImgs.map(()=>false); healImgs.forEach((im,i)=>im.onload=()=>healReady[i]=true);
+const HEAL_W=40,HEAL_H=40;
+
+
+const imgPlata=new Image(); imgPlata.src="Plata.png"; let plataReady=false; imgPlata.onload=()=>plataReady=true;
+const imgTomate=new Image(); imgTomate.src="tomate.png"; let tomateReady=false; imgTomate.onload=()=>tomateReady=true; // Nuevo proyectil del policía
+
+
+/* ═════════════ AUDIO ═════════════ */
+const shootSound=new Audio("https://actions.google.com/sounds/v1/foley/air_whoosh.mp3"); shootSound.volume=.45;
+const coinSound =new Audio("https://actions.google.com/sounds/v1/foley/coin_drop.mp3"); coinSound.volume=.65;
+const piggySound=new Audio("https://actions.google.com/sounds/v1/foley/piggy_bank.mp3"); piggySound.volume=.8;
+const hitSound=new Audio("https://actions.google.com/sounds/v1/cartoon/metal_thud.mp3");
+const healSound =new Audio("https://actions.google.com/sounds/v1/cartoon/pop.mp3"); healSound.volume=.6;
+const appearSound=new Audio("https://actions.google.com/sounds/v1/cartoon/wood_plank_flicks.mp3"); appearSound.volume=.6;
+const policeMusic=new Audio("https://actions.google.com/sounds/v1/ambiences/city_traffic_light_steady_loop.mp3"); // Sonido sutil para policía
+policeMusic.volume = 0.2; // Volumen bajo para que sea de fondo
+policeMusic.loop = true; // Para que se repita mientras el policía esté
+const policeGruntSound = new Audio("https://actions.google.com/sounds/v1/human_sounds/grunts_vocal.mp3"); // Gruñido del policía
+policeGruntSound.volume = 0.7;
+
+
+// Música de fondo principal del juego
+const backgroundMusic = new Audio("OutrunMusic.mp3");
+backgroundMusic.volume = 0.3;
+backgroundMusic.loop = true;
+
+
+// Sonido ambiente del subterráneo
+const subwayAmbience = new Audio("SonidoSubte.mp3");
+subwayAmbience.volume = 0.15;
+subwayAmbience.loop = true;
+
+
+// Sonido de silbato para el policía
+const whistleSound = new Audio("Silbato.mp3");
+whistleSound.volume = 0.8 * 0.2; // Volumen del silbato reducido
+const plataSound = new Audio("Plata.mp3"); // Sonido para cuando aparece Plata.png
+plataSound.volume = 0.7;
+const dingSound = new Audio("Ding.mp3"); // Sonido para colisión con elementos flotantes
+dingSound.volume = 0.8;
+
+
+// Música de la pantalla de inicio
+const introMusic = new Audio("MusicaFondo.mp3"); // CAMBIADO A MusicaFondo.mp3
+introMusic.volume = 0.4;
+introMusic.loop = true;
+
+
+// Sonido para la nube
+const pufSound = new Audio("Puf.mp3");
+pufSound.volume = 0.7;
+
+
+// Nuevo sonido para el tomate
+const tomatoSound = new Audio("https://actions.google.com/sounds/v1/foley/thud.mp3");
+tomatoSound.volume = 0.6;
+
+
+// Música de transicion
+const victoriaSound = new Audio("Victoria.mp3"); // New victory sound
+victoriaSound.volume = 0.7;
+
+
+// Música de final del juego
+const FinalMusic = new Audio("Escuela.mp3");
+FinalMusic.volume = 0.5;
+FinalMusic.loop = true;
+
+// Música de Te Atraparon
+const LostMusic = new Audio("Lost.mp3");
+LostMusic.volume = 0.5;
+LostMusic.loop = false;
+
+/* ═════════════ CONSTANTES ═════════════ */
+const GRAV=900;
+const JUMP_V=-650; // Salto un poco más alto
+const FLOOR_Y=430;
+const HEAL_INTERVAL=12000, ITEM_SPEED=350;
+let POLI_SPEED=100; // Ahora es let para ajustarse por nivel
+const POLI_ANGRY_SPEED_MULTIPLIER = 3.5; // Velocidad del policía enfadado
+const POLI_WAIT=1.0;
+const POLI_APPEAR_INTERVAL=5000; // Intervalo para que aparezcan policías
+const POLI_LIFESPAN = 8000; // Duración en ms que el policía permanece activo
+const POLI_MIN_DIRECTION_CHANGES = 2; // Mínimo de cambios de dirección
+const POLI_MAX_DIRECTION_CHANGES = 3; // Máximo de cambios de dirección
+const POLI_THROW_INTERVAL = 2000; // Intervalo para que el policía arroje tomates
+const TOMATE_SPEED = 500; // Velocidad del tomate
+const TOMATE_W = 40, TOMATE_H = 40;
+
+
+const worldDefaultW=1600;
+
+
+// Constantes para los tamaños de los personajes y objetos
+const PLAYER_W=80, PLAYER_H=100;
+// Reducción del rango de colisión del jugador (ej. 20px menos por cada lado)
+const PLAYER_COLLISION_OFFSET_X = 15; // Desplazamiento X para colisión con cualquier cosa
+const PLAYER_COLLISION_OFFSET_Y = 15; // Desplazamiento Y para colisión con cualquier cosa
+const PLAYER_COLLISION_W = PLAYER_W - (PLAYER_COLLISION_OFFSET_X * 2);
+const PLAYER_COLLISION_H = PLAYER_H - (PLAYER_COLLISION_OFFSET_Y * 2);
+
+
+// Offset de colisión para los proyectiles (útiles escolares) con los transeúntes
+const PROJECTILE_COLLISION_OFFSET_X = 5; // Más pequeño para que se tenga que acercar más para vender
+const PROJECTILE_COLLISION_OFFSET_Y = 5; // Más pequeño para que se tenga que acercar más para vender
+
+
+
+
+const ENEMY_W=70, ENEMY_H=90;
+const POLICE_W=60, POLICE_H=80; // Policía un poco más chico
+
+
+// Límite de enemigos en pantalla
+const MAX_ENEMIES = 3; // Límite para que no se acumulen tantos transeúntes
+const ENEMY_EXIT_SPEED_MULTIPLIER = 2.5; // Velocidad extra al salir
+
+
+// Constantes para el efecto de Nube
+const CLOUD_ANIM_DURATION = 0.2; // Duración de cada fase de la animación (crecer/encoger)
+const CLOUD_MAX_SIZE = 100; // Tamaño máximo de la nube en píxeles
+
+
+// Constantes de Nivel
+const LEVEL1_SCORE_THRESHOLD = 150; // Puntos para pasar al Nivel 2
+const LEVEL2_SCORE_THRESHOLD = 250; // Puntos para terminar el juego (actualmente en 250)
+const LEVEL_SPEED_MULTIPLIER = 2; // Multiplicador de velocidad para el Nivel 2
+
+
+/* ═════════════ ESTADO GLOBAL ═════════════ */
+let worldW=worldDefaultW;
+let player,projectiles,enemies,policias,heals,premios,clouds,platforms,policeProjectiles; // Añadido 'clouds' y 'policeProjectiles'
+let keys={},score=0,gameOver=false,gameWon=false; // Añadido gameWon
+let lastEnemy=0,lastPoliAppear=0,lastHeal=0,lastShot=0,lastPoliThrow=0; // Añadido lastPoliThrow
+let currentItemIdx=0;
+let gameStarted = false;
+let currentLevel = 1; // Controla el nivel actual
+let transitionActive = false; // Bandera para la transición de nivel
+let transitionX = -800; // Posición inicial de la imagen de transición
+
+
+/* ═════════════ INIT ═════════════ */
+function init(level = 1){
+ player={x:120,y:FLOOR_Y,w:PLAYER_W,h:PLAYER_H,vx:0,vy:0,speed:220,
+         grounded:true,dropTime:0,dir:{x:1,y:0},health:6,maxHealth:6};
+ projectiles=[]; enemies=[]; heals=[]; premios=[]; policias=[]; clouds=[]; policeProjectiles = []; // Inicializar 'clouds' y 'policeProjectiles'
+ score=0; gameOver=false; gameWon = false; // Resetear gameWon
+ lastEnemy=lastPoliAppear=lastHeal=lastShot=lastPoliThrow=0;
+ currentItemIdx=Math.floor(Math.random()*itemImgs.length);
+ updateHUD();
+currentLevel = level; // Establece el nivel actual
+POLI_SPEED = 80; // Velocidad base
+if (currentLevel === 2) {
+   POLI_SPEED *= LEVEL_SPEED_MULTIPLIER;
+}
+
+
+// Reiniciar plataformas y fondo según el nivel
+if (currentLevel === 1) {
+   platforms=[{img:imgBanco,x:720,y:FLOOR_Y-15-20,w:240,h:80+20}];
+} else if (currentLevel === 2) {
+   // Para el nivel 2, no habrá banco por el momento, o se pueden agregar otras plataformas
+   // Por simplicidad, el nivel 2 solo tiene el suelo
+   platforms = [];
+}
+}
+
+
+// Intentar reproducir la música de inicio cuando la ventana cargue.
+// Esto a veces ayuda a sortear las políticas de reproducción automática de los navegadores.
+// Si falla, el botón de "COMENZAR" seguirá activándola.
+window.onload = function() {
+   introMusic.play().catch(e => console.log("Error al reproducir música de inicio:", e));
+};
+
+
+
+
+function startGame(level = 1) {
+   startScreen.classList.add('hidden'); // Oculta la pantalla de inicio
+   levelCompleteScreen.classList.add('hidden'); // Oculta la pantalla de nivel completo
+   gameEndScreen.classList.add('hidden'); // Oculta la pantalla de fin de juego
+   schoolScreen.classList.add('hidden'); // Oculta la pantalla de la escuela
+   gameContainer.classList.remove('hidden'); // Muestra el contenedor del juego
+   gameStarted = true;
+   init(level); // Se llama a init() aquí para inicializar el juego al comenzar, pasando el nivel
+   introMusic.pause(); // Pausar música de la pantalla de inicio
+   backgroundMusic.play().catch(e => console.log("Error al reproducir música de fondo:", e)); // Reproducir música de fondo al iniciar
+   subwayAmbience.play().catch(e => console.log("Error al reproducir sonido ambiente:", e)); // Reproducir sonido ambiente al iniciar
+   if (!loopId) { // Solo iniciar el loop si no está ya corriendo
+       loopId = requestAnimationFrame(loop); // Comienza el bucle del juego
+   }
+}
+
+
+startButton.addEventListener('click', () => startGame(1)); // Inicia el Nivel 1
+nextLevelButton.addEventListener('click', () => startGame(2)); // Inicia el Nivel 2
+goToSchoolButton.addEventListener('click', showSchoolScreen); // Botón para ir a la escuela
+
+
+function updateHUD(){HUD.innerHTML=`PUNTOS: ${score} &nbsp;&nbsp; VIDA: ${"❤️".repeat(player.health)}`}
+
+
+/* ═════════════ INPUT ═════════════ */
+addEventListener('keydown',e=>{
+ if(!gameStarted || e.repeat)return;
+ if(e.key==="ArrowLeft") {keys.left =true; player.dir={x:-1,y:0};}
+ if(e.key==="ArrowRight"){keys.right=true; player.dir={x: 1,y:0};}
+ if(e.key==="ArrowUp")   jump();
+ if(e.key==="ArrowDown"){keys.down =true; drop();}
+ if(e.key===" "&&!gameOver) shoot();
+ if(e.key==="r"&&gameOver) init(currentLevel); // Reiniciar el nivel actual
+});
+addEventListener('keyup',e=>{
+ if(!gameStarted)return;
+ if(e.key==="ArrowLeft") keys.left=false;
+ if(e.key==="ArrowRight")keys.right=false;
+ if(e.key==="ArrowDown") keys.down=false;
+});
+
+
+/* ═════════════ ACCIONES ═════════════ */
+function jump(){ if(player.grounded){player.vy=JUMP_V; player.grounded=false;} }
+function drop(){ if(player.grounded&&onPlatform(player)){player.dropTime=0.25; player.grounded=false;} }
+
+
+function getHandPos(){
+ const right = player.dir.x>=0;
+ const x = right ? player.x+player.w-ITEM_W/2 : player.x-ITEM_W/2;
+ const y = player.y + player.h/2 - ITEM_H/2;
+ return {x,y};
+}
+function shoot(){
+ if(Date.now()-lastShot<300) return;
+ shootSound.currentTime=0; shootSound.play();
+ const pos=getHandPos();
+ projectiles.push({x:pos.x,y:pos.y,w:ITEM_W,h:ITEM_H,
+                   vx:player.dir.x*ITEM_SPEED,
+                   vy:player.dir.y*ITEM_SPEED,
+                   idx:currentItemIdx});
+ currentItemIdx=Math.floor(Math.random()*itemImgs.length);
+ lastShot=Date.now();
+}
+
+
+/* ═════════════ HELPERS ═════════════ */
+function collide(a,b) {
+   if (a === player) { // Colisión del jugador con otros objetos (policías, enemigos, heals, proyectiles de policía)
+       const playerCollisionRect = {
+           x: player.x + PLAYER_COLLISION_OFFSET_X,
+           y: player.y + PLAYER_COLLISION_OFFSET_Y,
+           w: PLAYER_COLLISION_W,
+           h: PLAYER_COLLISION_H
+       };
+       return playerCollisionRect.x < b.x + b.w &&
+              playerCollisionRect.x + playerCollisionRect.w > b.x &&
+              playerCollisionRect.y < b.y + b.h &&
+              playerCollisionRect.y + playerCollisionRect.h > b.y;
+   } else if (projectiles.includes(a)) { // Colisión de proyectiles (útiles) con enemigos o policías
+       // Se reduce el radio de colisión para los proyectiles con los transeúntes/policías
+       const projectileCollisionRect = {
+           x: a.x + PROJECTILE_COLLISION_OFFSET_X,
+           y: a.y + PROJECTILE_COLLISION_OFFSET_Y,
+           w: a.w - (PROJECTILE_COLLISION_OFFSET_X * 2),
+           h: a.h - (PROJECTILE_COLLISION_OFFSET_Y * 2)
+       };
+       return projectileCollisionRect.x < b.x + b.w &&
+              projectileCollisionRect.x + projectileCollisionRect.w > b.x &&
+              projectileCollisionRect.y < b.y + b.h &&
+              projectileCollisionRect.y + projectileCollisionRect.h > b.y;
+   }
+   // Colisión por defecto si no es jugador ni proyectil
+   return a.x < b.x+b.w&&a.x+a.w>b.x&&a.y<b.y+b.h&&a.y+a.h>b.y;
+}
+
+
+
+
+function onPlatform(p){return platforms.some(pl=>p.x+p.w>pl.x&&p.x<pl.x+pl.w&&Math.abs(p.y+p.h-pl.y)<4);}
+
+
+/* ═════════════ SPAWNERS ═════════════ */
+function spawnEnemy(){
+   if (enemies.length >= MAX_ENEMIES) return;
+
+
+   const left = Math.random() < .5;
+   const x = left ? 20 : worldW - 100;
+  
+   let enemyTypeIndex;
+   if (currentLevel === 1) {
+     enemyTypeIndex = Math.floor(Math.random() * 3); // Transeunte1 o Transeunte2
+   } else if (currentLevel === 2) {
+       enemyTypeIndex = Math.floor(Math.random() * 3); // Transeunte1 o Transeunte2
+   }
+   // Añadir más lógica para niveles futuros (Transeunte2, Transeunte3)
+
+
+   let currentEnemyW = ENEMY_W;
+   let currentEnemyH = ENEMY_H;
+   let offsetY = 0;
+   let enemySpeed = (60 + Math.random() * 60);
+   let points = 10; // Puntuación base para Transeunte1
+
+
+   if (enemyTypeIndex === 1) { // Transeunte2
+       currentEnemyW = ENEMY_W * 1.2;
+       currentEnemyH = ENEMY_H * 1.2;
+       offsetY = 20;
+       enemySpeed *= 1.5; // Un poco más rápido que Transeunte1
+       points = 15;
+   } else if (enemyTypeIndex === 2) { // Transeunte3
+       currentEnemyW = ENEMY_W * 1.2;
+       currentEnemyH = ENEMY_H * 1.2;
+       offsetY = 20;
+       enemySpeed *= 1.8;
+       points = 15;
+   }
+
+
+   // Aplicar el multiplicador de velocidad del nivel
+   if (currentLevel === 2) {
+       enemySpeed *= LEVEL_SPEED_MULTIPLIER;
+   }
+
+
+   enemies.push({
+       x: x, y: FLOOR_Y + ENEMY_H - currentEnemyH + offsetY,
+       w: currentEnemyW, h: currentEnemyH,
+       vx: (left ? 1 : -1) * enemySpeed,
+       hasItem: -1,
+       type: enemyTypeIndex,
+       opacity: 1, // Propiedad para el fade out
+       points: points // Puntos que otorga al ser "vendido"
+   });
+}
+
+
+function spawnPoli(t){
+   if(policias.length >= 1) return; // Un solo policía a la vez en este nivel
+   policeMusic.play();
+
+
+   const left = Math.random() < .5, x = left ? -POLICE_W : worldW;
+   policias.push({
+       x: x, y: FLOOR_Y, w: POLICE_W, h: POLICE_H,
+       dir: left ? 1 : -1,
+       vx: POLI_SPEED * (left ? 1 : -1),
+       wait: 0,
+       changes: 0,
+       maxChanges: Math.floor(Math.random() * (POLI_MAX_DIRECTION_CHANGES - POLI_MIN_DIRECTION_CHANGES + 1)) + POLI_MIN_DIRECTION_CHANGES,
+       spawnTime: t,
+       angry: false,
+       angryItemIdx: -1,
+       lastThrow: t // Tiempo del último lanzamiento
+   });
+}
+
+
+function spawnHeal(){
+ const camX=Math.max(0,Math.min(player.x+player.w/2-400,worldW-800));
+ const xSpot=Math.random()*(800-HEAL_W)+camX;
+ const idx=Math.floor(Math.random()*healImgs.length);
+ heals.push({x:xSpot,y:FLOOR_Y-60,w:HEAL_W,h:HEAL_H,idx});
+ appearSound.currentTime=0; appearSound.play();
+}
+
+
+function throwTomate(poli) {
+   const startX = poli.x + poli.w / 2;
+   const startY = poli.y + poli.h / 2;
+   const targetX = player.x + player.w / 2;
+   const targetY = player.y + player.h / 2;
+
+
+   const angle = Math.atan2(targetY - startY, targetX - startX);
+
+
+   policeProjectiles.push({
+       x: startX,
+       y: startY,
+       w: TOMATE_W,
+       h: TOMATE_H,
+       vx: Math.cos(angle) * TOMATE_SPEED,
+       vy: Math.sin(angle) * TOMATE_SPEED,
+       img: imgTomate
+   });
+   tomatoSound.currentTime = 0;
+   tomatoSound.play();
+}
+
+
+
+
+/* ═════════════ TRANSICIONES Y CAMBIO DE NIVEL ═════════════ */
+function startLevelTransition(nextLevel) {
+   transitionActive = true;
+   transitionX = -800; // Inicia fuera de pantalla a la izquierda
+   gameStarted = false; // Pausar el juego
+   backgroundMusic.pause();
+   subwayAmbience.pause();
+   policeMusic.pause();
+    victoriaSound.play().catch(e => console.log("Error playing victory sound:", e));
+   cancelAnimationFrame(loopId); // Detener el bucle principal
+
+
+   const transitionInterval = setInterval(() => {
+       transitionX += 8; // Velocidad de la transición
+       if (transitionX >= 0) { // Cuando la imagen cubre la pantalla
+           clearInterval(transitionInterval);
+           // Mostrar pantalla de nivel completo / fin de juego
+           if (nextLevel === 2) {
+               gameContainer.classList.add('hidden');
+               levelCompleteScreen.classList.remove('hidden');
+               levelCompleteTitle.textContent = "¡NIVEL 1 COMPLETADO!";
+               levelCompleteMessage.textContent = "Prepárate para el Nivel 2. ¡La dificultad aumenta!";
+           } else if (nextLevel === 'end') { // Transición para el final del juego
+               gameContainer.classList.add('hidden');
+               gameEndScreen.classList.remove('hidden');
+           }
+           transitionActive = false; // Finaliza la transición
+           transitionX = -800; // Resetear para la próxima vez
+       }
+   }, 1000 / 60); // Aproximadamente 60 FPS
+}
+
+
+function showSchoolScreen() {
+   gameEndScreen.classList.add('hidden');
+   schoolScreen.classList.remove('hidden');
+   // Si hay música sonando, pausarla para la pantalla final
+   backgroundMusic.pause();
+   subwayAmbience.pause();
+   policeMusic.pause();
+   introMusic.pause(); // Por si acaso
+   FinalMusic.play();
+}
+
+
+/* ═════════════ UPDATE ═════════════ */
+function update(dt,t){
+ if(gameOver || !gameStarted || transitionActive) return;
+
+
+// Verificar condiciones de nivel o fin de juego
+if (currentLevel === 1 && score >= LEVEL1_SCORE_THRESHOLD && !transitionActive) {
+    startLevelTransition(2); // Pasar al Nivel 2
+    return; // Salir de la función update para pausar el juego
+} else if (currentLevel === 2 && score >= LEVEL2_SCORE_THRESHOLD && !transitionActive) {
+   startLevelTransition('end'); // Final del juego
+   return;
+}
+
+
+ /* ------ Jugador ------ */
+ player.vx=((keys.left?-1:0)+(keys.right?1:0))*player.speed;
+ if(player.dropTime>0) player.dropTime-=dt;
+ player.vy+=GRAV*dt;
+ player.x+=player.vx*dt; player.y+=player.vy*dt;
+
+
+ /* plataformas */
+ if(player.dropTime<=0){
+   let landed=false;
+   for(const pl of platforms){
+     if(player.vy>=0&&player.y+player.h<=pl.y+player.vy*dt&&
+        player.x+player.w>pl.x&&player.x<pl.x+pl.w&&
+        player.y+player.h>=pl.y){
+       player.y=pl.y-player.h; player.vy=0; player.grounded=true; landed=true; break;
+     }
+   }
+   if(!landed && player.y+player.h<FLOOR_Y) player.grounded=false;
+ }
+ if(player.y>FLOOR_Y){player.y=FLOOR_Y; player.vy=0; player.grounded=true;}
+ player.x=Math.max(0,Math.min(worldW-player.w,player.x));
+
+
+ /* ------ Proyectiles (útiles escolares) ------ */
+ for(let i=projectiles.length-1;i>=0;i--){
+   const p=projectiles[i]; p.x+=p.vx*dt; p.y+=p.vy*dt;
+   if(p.x<-p.w||p.x>worldW||p.y<-p.h||p.y>canvas.height) projectiles.splice(i,1);
+ }
+
+
+/* ------ Proyectiles de Policía (tomates) ------ */
+for(let i=policeProjectiles.length-1;i>=0;i--){
+   const proj=policeProjectiles[i];
+   proj.x += proj.vx * dt;
+   proj.y += proj.vy * dt;
+
+
+   // Colisión con el jugador
+   if(collide(player, proj)){
+       hitSound.currentTime=0; hitSound.play();
+       player.health--;
+       updateHUD();
+       clouds.push({x: player.x + player.w / 2, y: player.y + player.h / 2, timer: 0});
+       pufSound.currentTime = 0;
+       pufSound.play().catch(e => console.log("Error al reproducir Puf.mp3:", e));
+       policeProjectiles.splice(i, 1);
+       if(player.health<=0) gameOver=true;
+       continue;
+   }
+
+
+   // Remover proyectiles que salgan de la pantalla
+   if(proj.x < -proj.w || proj.x > worldW || proj.y < -proj.h || proj.y > canvas.height) {
+       policeProjectiles.splice(i, 1);
+   }
+}
+
+
+ /* ------ Premios Plata ------ */
+ for(let i=premios.length-1;i>=0;i--){
+   const pr=premios[i]; pr.y+=pr.vy*dt; pr.time-=dt;
+   if(pr.time<=0) {
+       premios.splice(i,1);
+   }
+}
+
+
+
+
+ /* ------ Nubes de impacto ------ */
+ for(let i=clouds.length-1;i>=0;i--){
+   const c=clouds[i];
+   c.timer += dt;
+   if (c.timer < CLOUD_ANIM_DURATION) { // Fase de crecimiento
+     c.currentSize = (c.timer / CLOUD_ANIM_DURATION) * CLOUD_MAX_SIZE;
+   } else if (c.timer < CLOUD_ANIM_DURATION * 2) { // Fase de encogimiento
+     c.currentSize = CLOUD_MAX_SIZE - ((c.timer - CLOUD_ANIM_DURATION) / CLOUD_ANIM_DURATION) * CLOUD_MAX_SIZE;
+   } else {
+     clouds.splice(i, 1); // Eliminar nube cuando termina
+   }
+}
+
+
+ /* ------ Enemigos comunes (Transeúntes) ------ */
+ for(let i=enemies.length-1;i>=0;i--){
+   const e=enemies[i];
+   // Si el enemigo tiene un ítem (es decir, ya fue "vendido"), se mueve más rápido para salir
+   if (e.hasItem !== -1) {
+       e.x += e.vx * dt * ENEMY_EXIT_SPEED_MULTIPLIER; // Se acelera para salir
+       e.opacity -= dt * 2; // Reduce la opacidad para el fade out
+       if (e.opacity <= 0 || e.x < -e.w || e.x > worldW) { // Si sale de la pantalla o se vuelve invisible
+           enemies.splice(i, 1);
+       }
+       continue; // No procesar colisiones si ya está "vendido"
+   }
+
+
+   e.x+=e.vx*dt;
+   if(e.x<-e.w||e.x>worldW){enemies.splice(i,1); continue;}
+   // Si el jugador choca con un enemigo NO vendido
+   if(collide(player,e)){
+       hitSound.currentTime=0; hitSound.play();
+       player.health--;
+       updateHUD();
+       // Crea la nube de impacto aquí, ya que Leo colisiona con el transeúnte
+       clouds.push({x: e.x + e.w / 2, y: e.y + e.h / 2, timer: 0});
+       pufSound.currentTime = 0; // Reinicia el sonido
+       pufSound.play().catch(e => console.log("Error al reproducir Puf.mp3:", e)); // Reproduce Puf.mp3
+       enemies.splice(i,1); // El enemigo desaparece si el jugador choca con él
+       if(player.health<=0) gameOver=true;
+       continue;
+   }
+
+
+   for(let j=projectiles.length-1;j>=0;j--){
+       if(collide(projectiles[j],e)){
+           coinSound.currentTime=0; coinSound.play(); // Sonido de monedas al impactar
+           piggySound.currentTime=0; piggySound.play();
+           premios.push({x:player.x+player.w/2-16,y:player.y-25,vy:-40,time:1}); // Esto crea el premio
+           plataSound.currentTime = 0; // Reinicia el sonido
+           plataSound.play().catch(e => console.log("Error al reproducir Plata.mp3:", e)); // Reproduce una sola vez
+           score+=e.points; updateHUD(); // Suma los puntos específicos del transeúnte
+
+
+           // Aquí NO creamos la nube, solo si Leo colisiona
+          
+           // El transeúnte "recibe" el ítem y cambia de dirección/velocidad
+           e.hasItem = projectiles[j].idx; // Guarda el índice del ítem que lo impactó
+           e.vx *= -1; // Cambia de dirección
+           e.opacity = 1; // Asegura que empieza con opacidad completa para el fade out
+          
+           projectiles.splice(j,1); // Elimina el proyectil
+           // El enemigo NO se elimina instantáneamente, ahora hará fade out
+           break;
+       }
+   }
+}
+
+
+ /* ------ Policías ------ */
+   let anyPoliceOnScreen = false;
+ for(let i=policias.length-1;i>=0;i--){
+   const p=policias[i];
+   anyPoliceOnScreen = true;
+
+
+   // Verificar si el policía debe desaparecer por tiempo y número de cambios
+   const shouldDespawnByTime = (t - p.spawnTime > POLI_LIFESPAN && p.changes >= POLI_MIN_DIRECTION_CHANGES);
+   const hasExitedScreen = (p.x < -p.w || p.x > worldW);
+
+
+   if (shouldDespawnByTime || hasExitedScreen) {
+       policias.splice(i, 1);
+       // Asegurarse de que el estado de enojo y el ítem se reseteen al desaparecer
+       p.angry = false;
+       p.angryItemIdx = -1;
+       if(policias.length === 0) policeMusic.pause();
+       continue;
+   }
+
+
+   // Lógica de movimiento y cambios de dirección
+   if(p.wait > 0){
+       p.wait -= dt;
+       if(p.wait <= 0){
+           if (p.changes < p.maxChanges) { // Si aún le quedan cambios de dirección
+               p.dir *= -1;
+               p.vx = (p.angry ? POLI_SPEED * POLI_ANGRY_SPEED_MULTIPLIER : POLI_SPEED) * p.dir;
+               p.changes++;
+           } else {
+               // Después de los cambios, se mueve para salir de la pantalla a velocidad normal
+               p.vx = (p.angry ? POLI_SPEED * POLI_ANGRY_SPEED_MULTIPLIER : POLI_SPEED) * p.dir;
+           }
+       }
+   } else {
+     p.x+=p.vx*dt;
+
+
+       // Comportamiento al llegar a los bordes visibles del mundo
+       if (p.x < 0 && p.dir === -1) {
+           p.x = 0; p.dir = 1; p.vx = (p.angry ? POLI_SPEED * POLI_ANGRY_SPEED_MULTIPLIER : POLI_SPEED);
+           p.changes++; // Contar el cambio de dirección
+           p.wait = POLI_WAIT; // Pequeña pausa al cambiar de dirección
+       } else if (p.x > worldW - p.w && p.dir === 1) {
+           p.x = worldW - p.w; p.dir = -1; p.vx = -(p.angry ? POLI_SPEED * POLI_ANGRY_SPEED_MULTIPLIER : POLI_SPEED);
+           p.changes++; // Contar el cambio de dirección
+           p.wait = POLI_WAIT; // Pequeña pausa al cambiar de dirección
+       }
+   }
+
+
+   // Policía arroja tomates en el Nivel 2
+   if (currentLevel === 2 && t - p.lastThrow > POLI_THROW_INTERVAL) {
+       throwTomate(p);
+       p.lastThrow = t;
+   }
+
+
+   /* colisión con jugador ⇒ fin instantáneo */
+   if(collide(player,p)){ gameOver=true;} // Pausar todas las músicas
+
+
+   /* proyectil golpea policía ⇒ penaliza puntos y enfurece */
+   for(let j=projectiles.length-1;j>=0;j--) if(collide(projectiles[j],p)){
+     score=Math.max(0,score-20); updateHUD();
+     hitSound.currentTime=0; hitSound.play();
+    policeGruntSound.currentTime=0; policeGruntSound.play(); // Sonido de gruñido
+    whistleSound.currentTime=0; whistleSound.play(); // Sonido de silbato
+    p.angry = true; // El policía se enfurece
+    p.vx = POLI_SPEED * POLI_ANGRY_SPEED_MULTIPLIER * p.dir; // Aumenta su velocidad
+    p.angryItemIdx = projectiles[j].idx; // Guarda el índice del ítem que lo enfureció
+     projectiles.splice(j,1);
+   }
+ }
+   // Si no hay policías en pantalla y la música de policía está sonando, pausarla
+   if (!anyPoliceOnScreen && !policeMusic.paused) {
+       policeMusic.pause();
+       policeMusic.currentTime = 0;
+   }
+
+
+
+
+ /* ------ Heals ------ */
+ for(let i=heals.length-1;i>=0;i--){
+   const h=heals[i];
+   if(collide(player,h)){
+     if(player.health<player.maxHealth){player.health++; healSound.currentTime=0; healSound.play();}
+    // Reproducir sonido "Ding" al colisionar con un elemento flotante (curación)
+    dingSound.currentTime = 0;
+    dingSound.play().catch(e => console.log("Error al reproducir Ding.mp3:", e));
+    updateHUD();
+     heals.splice(i,1);
+   }
+ }
+
+
+ /* ------ Spawns ------ */
+ if(t-lastEnemy>Math.max(600,2000-score*.4)){spawnEnemy(); lastEnemy=t;}
+ if(t-lastPoliAppear > POLI_APPEAR_INTERVAL){spawnPoli(t); lastPoliAppear=t;} // Pasar el tiempo actual a spawnPoli
+ if(t-lastHeal>HEAL_INTERVAL){spawnHeal(); lastHeal=t;}
+}
+
+
+/* ═════════════ RENDER ═════════════ */
+function render(){
+ if(!gameStarted && !transitionActive) return; // Si no hay juego ni transición, no renderizar
+
+
+ ctx.clearRect(0,0,800,600);
+ const camX=Math.max(0,Math.min(player.x+player.w/2-400,worldW-950));
+
+
+ /* fondo */
+if (currentLevel === 1) {
+   bg1Ready?ctx.drawImage(bg1,-camX,0):(ctx.fillStyle="#333",ctx.fillRect(0,0,800,600));
+} else if (currentLevel === 2) {
+   bg2Ready?ctx.drawImage(bg2,-camX,0, worldW, 600):(ctx.fillStyle="#333",ctx.fillRect(0,0,800,600)); // Usar bg2 para el Nivel 2
+}
+
+
+ /* banco (solo en nivel 1) */
+if (currentLevel === 1 && platforms.length > 0) {
+   const pl=platforms[0];
+   bancoReady?ctx.drawImage(pl.img,pl.x-camX,pl.y,pl.w,pl.h)
+             :(ctx.fillStyle="#444",ctx.fillRect(pl.x-camX,pl.y,pl.w,pl.h));
+}
+
+
+ /* proyectiles (útiles escolares en el aire) */
+ projectiles.forEach(p=>{
+   itemReady[p.idx]? ctx.drawImage(itemImgs[p.idx],p.x-camX,p.y,p.w,p.h)
+                   : (ctx.fillStyle="#ff0",ctx.fillRect(p.x-camX,p.y,p.w,p.h));
+ });
+
+
+/* proyectiles de policía (tomates) */
+policeProjectiles.forEach(proj => {
+   if (tomateReady) {
+       ctx.drawImage(proj.img, proj.x - camX, proj.y, proj.w, proj.h);
+   } else {
+       ctx.fillStyle = "red";
+       ctx.fillRect(proj.x - camX, proj.y, proj.w, proj.h);
+   }
+});
+
+
+ /* curas */
+ heals.forEach(h=>{
+   healReady[h.idx]? ctx.drawImage(healImgs[h.idx],h.x-camX,h.y,h.w,h.h)
+                   : (ctx.fillStyle="#0f0",ctx.fillRect(h.x-camX,h.y,h.w,h.h));
+ });
+
+
+ /* premios Plata */
+ premios.forEach(pr=>{
+   // El sonido de Plata.mp3 se reproduce al agregar el premio en la lógica de update
+   plataReady? ctx.drawImage(imgPlata,pr.x-camX,pr.y,32,32)
+             : (ctx.fillStyle="#afafaf",ctx.fillRect(pr.x-camX,pr.y,32,32));
+ });
+
+
+/* enemigos comunes (Transeúntes) */
+enemies.forEach(e=>{
+   ctx.save();
+   ctx.globalAlpha = e.opacity; // Aplica la opacidad para el fade out
+
+
+   if (enemyReady[e.type]) {
+       ctx.drawImage(enemyImgs[e.type], e.x - camX, e.y, e.w, e.h);
+   } else {
+       ctx.fillStyle="#888";
+       ctx.fillRect(e.x - camX, e.y, e.w, e.h);
+   }
+
+
+   // Dibuja el ítem en la mano del transeúnte si ya fue "vendido"
+   if (e.hasItem !== -1) {
+       const itemX = e.x + e.w / 2 - ITEM_W / 2;
+       const itemY = e.y + e.h / 4; // Ajusta la posición para que parezca en la mano
+       itemReady[e.hasItem]? ctx.drawImage(itemImgs[e.hasItem], itemX - camX, itemY, ITEM_W, ITEM_H)
+                             : (ctx.fillStyle="#ff0", ctx.fillRect(itemX - camX, itemY, ITEM_W, ITEM_H));
+   }
+   ctx.restore(); // Restaura la opacidad por defecto
+});
+
+
+/* policías */
+policias.forEach(p=>{
+   if (policeReady) {
+       ctx.save();
+
+
+       if (p.angry) {
+           // Dibuja la imagen del policía en un canvas temporal para extraer el alfa
+           const tempCanvas = document.createElement('canvas');
+           tempCanvas.width = p.w;
+           tempCanvas.height = p.h;
+           const tempCtx = tempCanvas.getContext('2d');
+           tempCtx.imageSmoothingEnabled = false; // Importante para pixel art
+
+
+           // Dibuja la imagen original del policía en el canvas temporal
+           tempCtx.drawImage(imgPolicia, 0, 0, p.w, p.h);
+
+
+           // Ahora, dibuja un rectángulo rojo con globalAlpha sobre el canvas temporal
+           tempCtx.globalCompositeOperation = 'source-atop'; // Dibuja la fuente (rojo) sobre el destino (policía) donde se superponen
+           tempCtx.globalAlpha = 0.8; // Opacidad del tinte
+           tempCtx.fillStyle = "red";
+           tempCtx.fillRect(0, 0, p.w, p.h);
+          
+           // Dibuja el contenido del canvas temporal en el canvas principal
+           ctx.drawImage(tempCanvas, p.x - camX, p.y, p.w, p.h);
+
+
+       } else {
+           // Dibuja el policía normal si no está enfadado
+           ctx.drawImage(imgPolicia, p.x - camX, p.y, p.w, p.h);
+       }
+      
+       ctx.restore(); // Restaura el estado del canvas
+
+
+       // Dibuja el ítem en la mano del policía si está enfadado (fuera del save/restore para no aplicar el filtro)
+       if (p.angryItemIdx !== -1) {
+           const itemX = p.x + p.w / 2 - ITEM_W / 2;
+           const itemY = p.y + p.h / 4;
+           if (itemReady[p.angryItemIdx]) {
+               ctx.drawImage(itemImgs[p.angryItemIdx], itemX - camX, itemY, ITEM_W, ITEM_H);
+           } else {
+               ctx.fillStyle="#ff0";
+               ctx.fillRect(itemX - camX, itemY, ITEM_W, ITEM_H);
+           }
+       }
+
+
+   } else {
+       ctx.fillStyle="#00f";
+       ctx.fillRect(p.x - camX, p.y, p.w, p.h);
+   }
+});
+
+
+/* nubes de impacto */
+clouds.forEach(c => {
+   if (nubeReady) {
+       ctx.save();
+       ctx.globalAlpha = 1 - (c.timer / (CLOUD_ANIM_DURATION * 2)); // Fade out de la nube
+       const drawSize = c.currentSize;
+       const drawX = c.x - drawSize / 2 - camX; // Centrar la nube
+       const drawY = c.y - drawSize / 2;
+       ctx.drawImage(imgNube, drawX, drawY, drawSize, drawSize);
+       ctx.restore();
+   }
+});
+
+
+
+
+ /* jugador */
+ playerReady?ctx.drawImage(imgPlayer,player.x-camX,player.y,player.w,player.h)
+            :(ctx.fillStyle="#777",ctx.fillRect(player.x-camX,player.y,player.w,player.h));
+
+
+ /* ítem en mano del jugador */
+ const hand=getHandPos();
+ itemReady[currentItemIdx]? ctx.drawImage(itemImgs[currentItemIdx],hand.x-camX,hand.y,ITEM_W,ITEM_H)
+                          : (ctx.fillStyle="#ff0",ctx.fillRect(hand.x-camX,hand.y,ITEM_W,ITEM_H));
+
+
+ /* game over */
+ if(gameOver){
+   ctx.fillStyle="rgba(0,0,0,.7)"; ctx.fillRect(0,0,800,600);
+   ctx.fillStyle="#fff"; ctx.textAlign="center"; ctx.font="40px 'Press Start 2P'";
+   ctx.fillText("¡HAS SIDO ATRAPADO!",400,280);
+   ctx.font="20px 'Press Start 2P'";
+   ctx.fillText("Pulsa R para reiniciar",400,320);
+   LostMusic.play();
+}
+
+
+// Renderizar la imagen de transición si está activa
+if (transitionActive) {
+    if (subterraneoReady) {
+        ctx.drawImage(imgSubterraneo, transitionX, 0, 800, 600);
+    }
+}
+}
+
+
+/* ═════════════ LOOP ═════════════ */
+let last=0;
+let loopId; // Variable para almacenar el ID del requestAnimationFrame
+
+
+function loop(t){
+ const dt=(t-last)/1000; last=t;
+ update(dt,t); render();
+ loopId = requestAnimationFrame(loop);
+}
+</script>
+</body>
+</html>
+
